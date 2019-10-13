@@ -1,0 +1,101 @@
+package main
+
+import (
+	"bufio"
+	"container/heap"
+	"fmt"
+	"io"
+	"os"
+	"strconv"
+	"strings"
+)
+
+type CheesePoint struct {
+	CheeseInKg int32
+	Location   int //index in source array
+}
+type AllCheesePoints []CheesePoint
+
+// GetMaxCheeseInKG
+func GetMaxCheeseInKG(cheeseLine []int32) int32 {
+	h := &AllCheesePoints{}
+
+	for index, availableCheese := range cheeseLine {
+		c := CheesePoint{CheeseInKg: availableCheese, Location: index}
+		h.Push(c)
+	}
+	heap.Init(h)
+	var MouseMouth int32
+	for i := h.Len(); i > 0; i-- {
+		currentCheeseLoc := heap.Pop(h).(CheesePoint)
+		if (currentCheeseLoc.Location == 0 && cheeseLine[currentCheeseLoc.Location+1] != -1) ||
+			(currentCheeseLoc.Location == len(cheeseLine)-1 && cheeseLine[currentCheeseLoc.Location-1] != -1) ||
+			(cheeseLine[currentCheeseLoc.Location+1] != -1 && cheeseLine[currentCheeseLoc.Location-1] != -1) {
+			MouseMouth += currentCheeseLoc.CheeseInKg
+			cheeseLine[currentCheeseLoc.Location] = -1 //ate whole cheese
+		}
+	}
+
+	return MouseMouth
+
+}
+
+func main() {
+	reader := bufio.NewReaderSize(os.Stdin, 1024*1024)
+
+	noOfTestCases, err := strconv.ParseInt(readLine(reader), 10, 64)
+	checkError(err)
+	t := int32(noOfTestCases)
+	tCaseResults := make([]int32, noOfTestCases)
+
+	for tItr := 0; tItr < int(t); tItr++ {
+		nTemp, err := strconv.ParseInt(readLine(reader), 10, 64)
+		checkError(err)
+		n := int32(nTemp)
+
+		arrTemp := strings.Split(readLine(reader), " ")
+		var arr []int32
+
+		for i := 0; i < int(n); i++ {
+			arrItemTemp, err := strconv.ParseInt(arrTemp[i], 10, 64)
+			checkError(err)
+			arrItem := int32(arrItemTemp)
+			arr = append(arr, arrItem)
+		}
+
+		tCaseResults[tItr] = GetMaxCheeseInKG(arr)
+	}
+
+	for tItr := 0; tItr < int(t); tItr++ {
+		fmt.Printf("%d\n", tCaseResults[tItr])
+	}
+
+}
+
+func readLine(reader *bufio.Reader) string {
+	str, _, err := reader.ReadLine()
+	if err == io.EOF {
+		return ""
+	}
+
+	return strings.TrimRight(string(str), "\r\n")
+}
+
+func checkError(err error) {
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+}
+
+func (h AllCheesePoints) Len() int           { return len(h) }
+func (h AllCheesePoints) Less(i, j int) bool { return h[i].CheeseInKg > h[j].CheeseInKg }
+func (h AllCheesePoints) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *AllCheesePoints) Push(x interface{}) {	*h = append(*h, x.(CheesePoint))}
+func (h *AllCheesePoints) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
